@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
+import random
 from typing import Dict, List, Tuple
 
 
@@ -134,6 +135,30 @@ class Solution:
             f.write('\n')
             f.write(substitutions)
 
+
+def random_solution(players: List[Player]) -> Solution:
+    players_by_position = {
+        POSITION.MID: [p for p in players if p.position == POSITION.MID],
+        POSITION.FW: [p for p in players if p.position == POSITION.FW],
+        POSITION.DEF: [p for p in players if p.position == POSITION.DEF],
+        POSITION.GK: [p for p in players if p.position == POSITION.GK]
+    }
+
+    def select():
+        mids = random.choices(
+            players_by_position[POSITION.MID], k=MAX_BY_POSITION[POSITION.MID])
+        fws = random.choices(
+            players_by_position[POSITION.FW], k=MAX_BY_POSITION[POSITION.FW])
+        defs = random.choices(
+            players_by_position[POSITION.DEF], k=MAX_BY_POSITION[POSITION.DEF])
+        gks = random.choices(
+            players_by_position[POSITION.GK], k=MAX_BY_POSITION[POSITION.GK])
+        return Solution([*mids, *fws, *defs, *gks])
+    
+    solution = select()
+    while not solution.valid():
+        solution = select()
+    return solution
 
 def read_row(row: str) -> Player:
     split = row.strip().split(',')
