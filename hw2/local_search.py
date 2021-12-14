@@ -6,11 +6,8 @@ from common import Player, POSITION, Solution, read_file
 from greedy import greedy
 
 
-def local_search(players: List[Player], budget: float, population_size: int) -> Solution:
-    solution = greedy(players, budget)
-    while not solution.valid():
-        solution = greedy(players, budget)
-
+def local_search(players: List[Player], budget: float, population_size: int, initial_solution: Solution) -> Solution:
+    solution = initial_solution
     # loop that runs so long as the best in current population has more points
     # than the solution from previous iteration
     while True:
