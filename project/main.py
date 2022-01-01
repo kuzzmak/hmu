@@ -1,15 +1,20 @@
+import random
 from typing import List, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
-import math
 
 from customer import Customer
 from route import Route
+from solution import Solution
 from utils import calculate_distance
 
 
-def nearest_customers_by_distance(curr_x: int, curr_y: int, customers: np.ndarray):
+def nearest_customers_by_distance(
+    curr_x: int,
+    curr_y: int,
+    customers: np.ndarray,
+) -> List[int]:
     nearest = np.sqrt(
         np.sum(
             np.square(
@@ -20,34 +25,41 @@ def nearest_customers_by_distance(curr_x: int, curr_y: int, customers: np.ndarra
     return nearest
 
 
+def initial_sort(customers: List[Customer], base: Customer) -> List[Customer]:
+    funcs = [
+        lambda c: c.ready_t,
+        lambda c: calculate_distance(c, base),
+        lambda c: (calculate_distance(c, base), c.ready_t),
+    ]
+    reverse = False
+    idx = random.choice([0, 1, 2])
+    if idx == 1:
+        if random.random() < 0.5:
+            reverse = True
+    return sorted(customers, key=funcs[idx], reverse=reverse)
+
+
 def make_route(
     base: Customer,
     customers: List[Customer],
     capacity: int,
 ) -> Route:
     route = Route(base, capacity)
-    customers = sorted(customers, key=lambda c: c.ready_t)
+    customers = initial_sort(customers, base)
     current_c = customers[0]
     if route.can_add_customer(current_c):
         route.add_customer(current_c)
     customers.remove(current_c)
+    if len(customers) == 0:
+        return route
     coords = np.array([[c.x, c.y] for c in customers])
     nearest = nearest_customers_by_distance(
         current_c.x,
         current_c.y,
         coords,
     )
-    # how many neighbors were searched but they do not satisfy
-    # some of the conditions
-    searched = 0
-    # how many neighbors were searched but their demand would
-    # break constraint on total capacity
-    cargo_miss = 0
-    n = 3
+    n = 10
     while True:
-        # if searched == len(nearest):
-        #     break
-        # next_c_idx = nearest[searched]
         nearest_n = nearest[:n]
         found = False
         for idx in nearest_n:
@@ -58,6 +70,8 @@ def make_route(
                 break
         if found:
             customers.remove(next_c)
+            if len(customers) == 0:
+                break
             coords = np.array([[c.x, c.y] for c in customers])
             nearest = nearest_customers_by_distance(
                 current_c.x,
@@ -66,98 +80,38 @@ def make_route(
             )
         else:
             break
-        # if truck gets there before closing
-        # if current_time <= next_c.due_t:
-        #     # if truck has any more capacity
-        #     if next_c.demand + current_demand <= capacity:
-        #         route.append(next_c)
-        #         current_c = next_c
-        #         customers.remove(next_c)
-        #         current_demand += current_c.demand
-        #         current_time = max(
-        #             current_time + current_c.service_t,
-        #             current_c.ready_t - current_time + current_c.service_t,
-        #         )
-        #         # reset distances because another customer was visited
-        #         coords = np.array([[c.x, c.y] for c in customers])
-        #         nearest = nearest_customers_by_distance(
-        #             current_c.x,
-        #             current_c.y,
-        #             coords,
-        #         )
-        #         searched = 0
-        #         cargo_miss = 0
-        #     else:
-        #         cargo_miss += 1
-        #         if cargo_miss >= 5:
-        #             break
-        # else:
-        #     searched += 1
-
     return route
 
 
-def greedy(veh_num: int, capacity: int, customers: List[Customer]):
+def draw_route(route: Route) -> None:
+    x_r = list(map(lambda r: r.x, route.customers))
+    y_r = list(map(lambda r: r.y, route.customers))
+    plt.plot(x_r, y_r, 'r-')
+
+
+def draw_customers(customers: List[Customer]) -> None:
+    x_c = list(map(lambda c: c.x, customers))
+    y_c = list(map(lambda c: c.y, customers))
+    plt.plot(x_c, y_c, 'bo')
+
+
+def draw_base(base: Customer) -> None:
+    plt.plot(base.x, base.y, 'ro')
+
+
+def greedy(veh_num: int, capacity: int, customers: List[Customer]) -> Solution:
     base = customers[0]
     customers = customers[1:]
-    all_customers = [c.copy() for c in customers]
-    x_c = list(map(lambda c: c.x, all_customers))
-    y_c = list(map(lambda c: c.y, all_customers))
-
-    # for c in customers:
-    #     print(c)
-    # print()
-    route1 = make_route(base, customers, capacity)
-    for c in route1.customers:
-        if c.no == base.no:
-            continue
-        customers.remove(c)
-
-    print(route1.time)
-    print(calculate_distance(route1.customers[-1], base))
-
-    # r_c = route1.customers
-    # x_r = list(map(lambda c: c.x, r_c))
-    # y_r = list(map(lambda c: c.y, r_c))
-
-    # plt.plot(x_c, y_c, 'bo')
-    # plt.plot(base.x, base.y, 'ro')
-    # plt.plot(x_r, y_r, 'r-')
-    # plt.show()
-    # print(route1)
-    # print(route1.time)
-
-    # print(len(customers))
-    # print(len(route1))
-
-    # for c in customers:
-    #     print(c)
-    # coords = np.array([[c.x, c.y] for c in customers])
-    # nearest = nearest_customers_by_distance(base.x, base.y, coords)
-    # nearest = customers[nearest[1]]
-    # r_x = list(map(lambda r: r.x, route1))
-    # r_y = list(map(lambda r: r.y, route1))
-    # x = list(map(lambda c: c.x, customers))
-    # y = list(map(lambda c: c.y, customers))
-    # plt.plot(x, y, 'bo')
-    # plt.plot(base.x, base.y, 'ro')
-    # plt.plot(r_x, r_y, 'r-')
-    # # plt.show()
-    # for c in route1:
-    #     customers.remove(c)
-    # route2 = make_route(customers, capacity)
-    # r_x = list(map(lambda r: r.x, route2))
-    # r_y = list(map(lambda r: r.y, route2))
-    # plt.plot(r_x, r_y, 'r-')
-    # # plt.show()
-
-    # for c in route2:
-    #     customers.remove(c)
-    # route3 = make_route(customers, capacity)
-    # r_x = list(map(lambda r: r.x, route3))
-    # r_y = list(map(lambda r: r.y, route3))
-    # plt.plot(r_x, r_y, 'r-')
-    # plt.show()
+    solution = Solution()
+    while len(customers) > 0:
+        route = make_route(base, customers, capacity)
+        route.add_customer(base)
+        for c in route.customers:
+            if c.no == base.no:
+                continue
+            customers.remove(c)
+        solution.add_route(route)
+    return solution
 
 
 def read_instance(instance_path: str) -> Tuple[int, int, List[Customer]]:
@@ -172,7 +126,158 @@ def read_instance(instance_path: str) -> Tuple[int, int, List[Customer]]:
     return veh_num, capacity, customers
 
 
+def merge_routes(r1: Route, r2: Route) -> List[Route]:
+    base = r1.customers[0]
+    customers = [*r1.customers[1:], *r2.customers[1:]]
+    new_routes = []
+    r1_new = make_route(base, customers, r1._capacity)
+    new_routes.append(r1_new)
+    for c in r1_new.customers:
+        if c.no == base.no:
+            continue
+        customers.remove(c)
+    if len(customers) == 0:
+        return new_routes
+    r2_new = make_route(base, customers, r1._capacity)
+    new_routes.append(r2_new)
+    return new_routes
+
+
+def random_swap_two_customers(solution: Solution) -> Solution:
+    base = solution.routes[0].customers[0]
+    ok = True
+    while True:
+        r1 = random.choice(solution.routes)
+        r2 = random.choice(solution.routes)
+        while r1 == r2:
+            r2 = random.choice(solution.routes)
+        # remove bases from the begining and the end of the route
+        cs_1 = r1.customers[1:-1]
+        cs_2 = r2.customers[1:-1]
+        # select two random customers which will be swapped
+        if len(cs_1) == 1:
+            rnd_idx_1 = 0
+        else:
+            rnd_idx_1 = random.randint(1, len(cs_1) - 1)
+        if len(cs_2) == 1:
+            rnd_idx_2 = 0
+        else:
+            rnd_idx_2 = random.randint(1, len(cs_2) - 1)
+        r_c_1 = cs_1[rnd_idx_1]
+        r_c_2 = cs_2[rnd_idx_2]
+        cs_1.remove(r_c_1)
+        cs_2.remove(r_c_2)
+        cs_1.append(r_c_2)
+        cs_2.append(r_c_1)
+        new_r_1 = make_route(base, cs_1, capacity)
+        new_r_1.add_customer(base)
+        if len(r1.customers) == len(new_r_1.customers):
+            ok = True
+        else:
+            ok = False
+        new_r_2 = make_route(base, cs_2, capacity)
+        new_r_2.add_customer(base)
+        if len(r2.customers) == len(new_r_2.customers):
+            ok = ok & True
+        else:
+            ok = False
+        if ok:
+            solution.routes.remove(r1)
+            solution.routes.remove(r2)
+            solution.add_route(new_r_1)
+            solution.add_route(new_r_2)
+            break
+    return solution
+
+
 if __name__ == '__main__':
     instance_path = r'C:\Users\tonkec\Documents\hmu\project\data\i1.txt'
     veh_num, capacity, customers = read_instance(instance_path)
-    greedy(veh_num, capacity, customers)
+    solution = greedy(veh_num, capacity, customers)
+    # print(solution)
+    # print()
+    solution = random_swap_two_customers(solution)
+    # print(solution)
+    solution.save()
+
+    # r1 = random.choice(solution.routes)
+    # r2 = random.choice(solution.routes)
+    # while r1 == r2:
+    #     r2 = random.choice(solution.routes)
+    # cs_1 = r1.customers[1:-1]
+    # cs_2 = r2.customers[1:-1]
+    # # print(cs_1)
+    # rnd_idx_1 = random.randint(1, len(cs_1) - 1)
+    # rnd_idx_2 = random.randint(1, len(cs_2) - 1)
+    # r_c_1 = cs_1[rnd_idx_1]
+    # r_c_2 = cs_2[rnd_idx_2]
+
+    # cs_1.remove(r_c_1)
+    # cs_2.remove(r_c_2)
+    # cs_1.append(r_c_2)
+    # cs_2.append(r_c_1)
+
+    # new_r_1 = make_route(customers[0], cs_1, capacity)
+    # new_r_2 = make_route(customers[0], cs_2, capacity)
+
+    # print('sel 1', r_c_1)
+    # print('sel 2', r_c_2)
+    # print()
+    # print('old 1', r1)
+    # print('new 1', new_r_1)
+    # print()
+    # print('old 2', r2)
+    # print('new 2', new_r_2)
+
+    # solution.save()
+    # r1 = random.choice(solution.routes)
+    # r2 = random.choice(solution.routes)
+    # while r1 == r2:
+    #     r2 = random.choice(solution.routes)
+    # new_routes = merge_routes(r1, r2)
+    # r3 = make_route(customers[0], [*r1.customers[1:],
+    #                 *r2.customers[1:]], capacity)
+    # print(r1)
+    # print(r2)
+    # for r in new_routes:
+    #     print(r)
+
+    # draw_customers(customers[1:])
+    # draw_base(customers[0])
+
+    # r1 = solution.routes[0]
+    # r2 = solution.routes[1]
+    # draw_route(r1)
+    # draw_route(r2)
+    # plt.show()
+
+    # by_dist = sorted(customers[1:], key=lambda c: calculate_distance(c, customers[0]))
+    # print(by_dist[0])
+    # a = list(map(lambda c: c.ready_t, customers))
+    # bins = 10
+    # hist = np.histogram(a, bins)
+    # std_dev = np.std(hist[0])
+    # print(std_dev)
+    # print(hist)
+
+    # print(solution)
+    # draw_customers(customers[1:])
+    # draw_base(customers[0])
+    # for r in routes:
+    #     draw_route(r)
+    # plt.show()
+    # # base
+    # c1 = Customer(0, 0, 0, 1, 0, 999, 0)
+    # # (0, 1)
+    # c2 = Customer(0, 1, 0, 1, 0, 999, 2)
+    # # (1, 2)
+    # c3 = Customer(0, 1, 2, 1, 0, 999, 3)
+    # # (2, 0)
+    # c4 = Customer(0, 0, 2, 1, 0, 999, 4)
+
+    # r = Route(c1, 999)
+    # r.add_customer(c2)
+    # r.add_customer(c3)
+    # r.add_customer(c4)
+    # print(r._times)
+    # print(r.length)
