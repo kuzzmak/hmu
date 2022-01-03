@@ -264,7 +264,7 @@ if __name__ == '__main__':
         population_size = 10
         for seconds, t in [(60, '1m'), (300, '5m'), (600, 'un')]:
             solution = run(instance_path, population_size, seconds)
-            save_string = f'res-{t}m-{instance}.txt'
+            save_string = f'res-{t}-{instance}.txt'
             solution.save(save_string)
 
     # veh_num, capacity, customers = read_instance(instance_path)
