@@ -260,12 +260,9 @@ def run(instance_path: str, population_size: int, seconds: int) -> Solution:
 if __name__ == '__main__':
     for i in range(6):
         instance = f'i{i+1}'
-        instance_path = fr'C:\Users\tonkec\Documents\hmu\project\data\{instance}.txt'
+        instance_path = fr'...\data\{instance}.txt'
         population_size = 10
         for seconds, t in [(60, '1m'), (300, '5m'), (600, 'un')]:
             solution = run(instance_path, population_size, seconds)
             save_string = f'res-{t}-{instance}.txt'
             solution.save(save_string)
-
-    # veh_num, capacity, customers = read_instance(instance_path)
-    # solution = greedy(veh_num, capacity, customers)
