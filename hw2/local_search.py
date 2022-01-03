@@ -66,12 +66,3 @@ def local_search(players: List[Player], budget: float, population_size: int, ini
             break
 
     return solution
-
-
-if __name__ == '__main__':
-    file_path = sys.argv[1]
-    players = read_file(file_path)
-    budget = 100
-    population_size = 10
-    solution = local_search(players, budget, population_size)
-    solution.save()
