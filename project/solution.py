@@ -12,6 +12,21 @@ class Solution:
     def routes(self) -> List[Route]:
         return self._routes
 
+    @property
+    def vehicles(self) -> int:
+        return len(self.routes)
+
+    @property
+    def length(self) -> float:
+        return sum([r.real_length for r in self.routes])
+
+    def better_than(self, other: "Solution") -> bool:
+        if self.vehicles < other.vehicles:
+            return True
+        if self.vehicles == other.vehicles and self.length < other.length:
+            return True
+        return False
+
     def add_route(self, route: Route) -> None:
         self._routes.append(route)
 
