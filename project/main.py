@@ -3,7 +3,6 @@ import time
 from typing import List, Tuple
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from customer import Customer
 from route import Route
@@ -82,22 +81,6 @@ def make_route(
         else:
             break
     return route
-
-
-def draw_route(route: Route) -> None:
-    x_r = list(map(lambda r: r.x, route.customers))
-    y_r = list(map(lambda r: r.y, route.customers))
-    plt.plot(x_r, y_r, 'r-')
-
-
-def draw_customers(customers: List[Customer]) -> None:
-    x_c = list(map(lambda c: c.x, customers))
-    y_c = list(map(lambda c: c.y, customers))
-    plt.plot(x_c, y_c, 'bo')
-
-
-def draw_base(base: Customer) -> None:
-    plt.plot(base.x, base.y, 'ro')
 
 
 def greedy(veh_num: int, capacity: int, customers: List[Customer]) -> Solution:
@@ -232,6 +215,7 @@ def run(instance_path: str, population_size: int, seconds: int) -> Solution:
     best = population[0]
     t = time.time()
     time_string = '{:>3}/{} seconds elapsed - '
+    current_iter = 0
     while time.time() - t < seconds:
         new_pop = [*population[:population_size // 2]]
         while len(new_pop) < population_size and time.time() - t < seconds:
@@ -243,6 +227,7 @@ def run(instance_path: str, population_size: int, seconds: int) -> Solution:
                 [s1, s2, s3],
                 key=lambda s: (s.vehicles, s.length),
             )
+            current_iter += 1
             best_new_s = new_s[0]
             if best_new_s.better_than(rnd_sol):
                 new_pop.append(best_new_s)
@@ -254,15 +239,16 @@ def run(instance_path: str, population_size: int, seconds: int) -> Solution:
                     )
         print(time_string.format(round(time.time() - t), seconds))
         population = sorted(new_pop, key=lambda s: (s.vehicles, s.length))
-    return best
+        current_iter += 1
+    return best, current_iter
 
 
 if __name__ == '__main__':
     for i in range(6):
         instance = f'i{i+1}'
-        instance_path = fr'...\data\{instance}.txt'
+        instance_path = fr'data\{instance}.txt'
         population_size = 10
         for seconds, t in [(60, '1m'), (300, '5m'), (600, 'un')]:
-            solution = run(instance_path, population_size, seconds)
-            save_string = f'res-{t}-{instance}.txt'
+            solution, current_iter = run(instance_path, population_size, seconds)
+            save_string = f'res-{t}-{instance}-iter-{current_iter}.txt'
             solution.save(save_string)
